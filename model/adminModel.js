@@ -12,6 +12,10 @@ const SignScheema = mongoose.Schema({
     password : {
         type : String,
         require : true
+    },
+    status : {
+        type : Boolean,
+        default : true
     }
 })
 

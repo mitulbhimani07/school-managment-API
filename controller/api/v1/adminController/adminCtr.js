@@ -53,7 +53,7 @@ module.exports.signin = async (req,res)=>{
         if (getuser) {
             let chekPassword = await bcrypt.compare(req.body.password,getuser.password);
             if (chekPassword) {
-                let token = await jwt.sign({userData : getuser},'user')
+                let token = await jwt.sign({userData : getuser},'ADMIN')
                 return  res.status(400).json({msg:"signin successfuly",data:token});
 
             } else {
@@ -68,6 +68,82 @@ module.exports.signin = async (req,res)=>{
 
     }
     catch(err){
+        return  res.status(400).json({msg:"somthing woas wrong !",err:err});
+
+    }
+}
+module.exports.singledata = async (req,res)=>{
+    try{
+        let singledata = await signin.findById(req.query.id);
+        console.log(singledata,req.query);
+        
+        if (singledata) {
+            return  res.status(200).json({msg:"Data find successfuly",data:singledata});
+
+        }
+        else{
+            return  res.status(200).json({msg:"Data not found!"});
+
+        }
+    }
+    catch(err){
+        return  res.status(400).json({msg:"somthing woas wrong !",err:err});
+
+    }
+}
+module.exports.logout = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(" ")[1]; // Get token from headers
+        if (!token) {
+            return res.status(401).json({ msg: "No token provided" });
+        }
+
+        await signin.create({ token }); // Store token in the blacklist
+
+        return res.status(200).json({ msg: "Logout successful" });
+    } catch (err) {
+        return res.status(500).json({ msg: "Something went wrong!", err: err });
+    }
+};
+module.exports.adminprofile = async (req,res) =>{
+    try{
+        console.log(req.body);
+        let ProfileAdmin = await signin.create(req.body)
+        if (ProfileAdmin) {
+
+            return  res.status(200).json({msg:"Profile added successfuly"});
+                
+        } else {
+                
+            return  res.status(200).json({msg:"Plaees tray again"});
+            
+        }
+    }catch(err){
+        return  res.status(400).json({msg:"somthing woas wrong !",err:err});
+
+    }
+}
+module.exports.update = async (req,res) =>{
+    console.log(req.params.id);
+    
+    try{
+        let FindUpdateId = await signin.findById(req.params.id)
+        if (FindUpdateId) {
+            let UpdateData = await signin.findByIdAndUpdate(FindUpdateId._id , req.body)
+            if (UpdateData) {
+                return  res.status(200).json({msg:"Update successfuly"});
+
+            }
+            else{
+
+                return  res.status(400).json({msg:" !",err:err});
+            }
+        }
+        else{
+            return  res.status(400).json({msg:"somthing woas wrong !",err:err});
+
+        }
+    }catch(err){
         return  res.status(400).json({msg:"somthing woas wrong !",err:err});
 
     }
