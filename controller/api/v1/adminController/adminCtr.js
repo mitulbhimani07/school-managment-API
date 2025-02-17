@@ -1,5 +1,6 @@
 
 const signin = require('../../../../model/adminModel')
+const Faculty=require('../../../../model/facultyModel');
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
@@ -14,7 +15,7 @@ module.exports.home = async (req,res)=>{
         return  res.status(200).json({msg:"somthing woas wrong !"});
     }
 }
-module.exports.singleSignUp = async (req,res)=>{
+module.exports.insertData = async (req,res)=>{
     console.log(req.body);
     
     try{
@@ -68,25 +69,6 @@ module.exports.signin = async (req,res)=>{
             return  res.status(200).json({msg:"email not found"});
         }
 
-    }
-    catch(err){
-        return  res.status(400).json({msg:"somthing woas wrong !",err:err});
-
-    }
-}
-module.exports.singledata = async (req,res)=>{
-    try{
-        let singledata = await signin.findById(req.query.id);
-        console.log(singledata,req.query);
-        
-        if (singledata) {
-            return  res.status(200).json({msg:"Data find successfuly",data:singledata});
-
-        }
-        else{
-            return  res.status(200).json({msg:"Data not found!"});
-
-        }
     }
     catch(err){
         return  res.status(400).json({msg:"somthing woas wrong !",err:err});
@@ -193,7 +175,7 @@ module.exports.ChangePassword = async (req, res) => {
         return res.status(400).json({ mes: "Somthing Wrong" })
     }
 }
-module.exports.forgetPassword = async (req, res) => {
+module.exports.sendEmail = async (req, res) => {
     console.log(req.body);
   
     try {
@@ -236,7 +218,7 @@ module.exports.forgetPassword = async (req, res) => {
             <p>Your OTP is: <b>${otp}</b></p>
             <p>This OTP will expire in 15 minutes.</p>
             <p>Please click the link below to proceed with your password reset:</p>
-            <p><a href="http://localhost:8005/api/changePassword">Reset Password</a></p>
+            <p><a href="http://localhost:8005/api/forgetPassword">Reset Password</a></p>
             <p>If you did not request a password reset, please ignore this email.</p>
             <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>
             `
@@ -249,4 +231,103 @@ module.exports.forgetPassword = async (req, res) => {
       return res.status(500).json({ mes: "Something went wrong" });
     }
 };
-  
+module.exports.forgetPassword=async(req,res)=>{
+    console.log(req.body);
+    
+    try{
+        let checkEmail=await signin.findOne({email:req.query.email});
+        if(checkEmail){
+            if(req.body.newPass==req.body.confirmPass){
+                req.body.password=await bcrypt.hash(req.body.newPass,10);
+                let updatePassword=await signin.findByIdAndUpdate(checkEmail._id,req.body);
+                if(updatePassword){
+                    res.status(200).json({msg:"password updated successfully",data:updatePassword});
+                }
+                else{
+                    res.status(200).json({msg:"Password not updated"});
+                }
+            }
+            else{
+                res.status(200).json({msg:"new Password and confirm password not matched"});
+            }
+        }else{
+            res.status(200).json({msg:"Invalid Email"});
+        }
+    }
+    catch(err){
+        res.status(400).json({msg:"something is wrong..",error:err});
+    }
+}
+module.exports.adminLogout=async(req,res)=>{
+    try{
+        req.session.destroy((err)=>{
+            if(err){
+                res.status(200).json({msg:"something is wrong.."});
+            }
+            else{
+                res.status(200).json({msg:"Admin Logout successfully.."});
+            }
+        })
+    }
+    catch(err){
+        res.status(400).json({msg:"something is wrong..",error:err});
+    }
+}
+//faculty Registration
+module.exports.facultyRegister=async(req,res)=>{
+    try{
+        let existEmail=await Faculty.findOne({email:req.body.email});
+        if(!existEmail){
+            var gPass=generatePassword();
+            var link="http://localhost:9000/api";
+            let transporter = nodemailer.createTransport({
+                host: "smtp.gmail.com",
+                port: 587,
+                secure: false, // true for port 465, false for other ports
+                auth: {
+                  user: "mitulbhimani281@gmail.com",
+                  pass: "uugochxrfxrylbjw",
+                },
+                tls:{
+                    rejectUnauthorized:false
+                }
+            });
+
+            const info = await transporter.sendMail({
+                from: 'mitulbhimani281@gmail.com', // sender address
+                to: req.body.email, // list of receivers
+                subject: "Faculty Verification", // Subject line
+                text: "Faculty Login", // plain text body
+                html: `<h1>Faculty Verification</h1><p>email:${req.body.email}</p><p>password:${gPass}</p><p>To Get Login Click here:${link}</p>`, // html body
+            });
+            
+            if(info){
+                let bcryptGPass=await bcrypt.hash(gPass,10);
+                let addFaculty=await Faculty.create({email:req.body.email,password:bcryptGPass,userName:req.body.userName});
+                if(addFaculty){
+                    res.status(200).json({msg:"Faculty add successfully",data:addFaculty});
+                }else{
+                    res.status(200).json({msg:"Faculty not add"});
+                }
+            }else{
+                res.status(200).json({msg:"Mail not Sent"});
+            }
+        }
+        else{
+            res.status(200).json({msg:"Invalid Email"});
+        }
+    }
+    catch(err){
+        res.status(400).json({msg:"something is wrong..",error:err});
+    }
+}
+//password generator
+function generatePassword() {
+    var length = 8,
+        charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+        retVal = "";
+    for (var i = 0, n = charset.length; i < length; ++i) {
+        retVal += charset.charAt(Math.floor(Math.random() * n));
+    }
+    return retVal;
+}

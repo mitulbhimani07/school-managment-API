@@ -24,5 +24,6 @@ app.use(express.urlencoded())
 
 
 app.use('/api',require('./routes/api/v1/adminRoutes'))
+app.use('/api/faculty',require('./routes/api/v1/FacultyRoutes'));
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
