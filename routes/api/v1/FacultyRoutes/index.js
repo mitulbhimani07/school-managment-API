@@ -11,6 +11,8 @@ routes.get('/facultyProfile',passport.authenticate('faculty',{failureRedirect:'/
 routes.put('/editFacultyProfile/:id',passport.authenticate('faculty',{failureRedirect:'/api/faculty/failFacultyAuth'}),Facultyctr.editFacultyProfile);
 //faculty logout
 routes.get('/facultyLogout',passport.authenticate('faculty',{failureRedirect:'/api/faculty/failFacultyAuth'}),Facultyctr.facultyLogout);
+//student register
+routes.post('/studentRegister',passport.authenticate('faculty',{failureRedirect:'/api/faculty/failFacultyAuth'}),Facultyctr.studentRegister);
 //Unauthorized
 routes.get('/failFacultyAuth',async(req,res)=>{
     try{

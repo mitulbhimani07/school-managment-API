@@ -38,6 +38,21 @@ passport.use('faculty',new JwtStrategy(facultyOpts, async function(payload,done)
         return done(null,false)
     }
 }))
+//Student passport
+const studentModel=require('../model/studentModel');
+var facultyOpts={
+    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+    secretOrKey:"Student"
+}
+
+passport.use('student',new JwtStrategy(facultyOpts, async function(payload,done){
+    let checkFacultyData=await studentModel.findOne({email:payload.StudentData.email});
+    if(checkFacultyData){
+        return done(null,checkFacultyData);
+    }else{
+        return done(null,false)
+    }
+}))
 
 //passport serialize and deserialize
 passport.serializeUser ((user , done) =>{
